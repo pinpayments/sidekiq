@@ -28,9 +28,10 @@ module Sidekiq
       def sidekiq_delay_until(timestamp, options={})
         Proxy.new(DelayedClass, self, options.merge('at' => timestamp.to_f))
       end
-      alias_method :delay, :sidekiq_delay
-      alias_method :delay_for, :sidekiq_delay_for
-      alias_method :delay_until, :sidekiq_delay_until
+      # TOTAL HACKS
+      # alias_method :delay, :sidekiq_delay
+      # alias_method :delay_for, :sidekiq_delay_for
+      # alias_method :delay_until, :sidekiq_delay_until
     end
 
   end
