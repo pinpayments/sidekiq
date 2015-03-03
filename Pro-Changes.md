@@ -3,6 +3,55 @@ Sidekiq Pro Changelog
 
 Please see [http://sidekiq.org/pro](http://sidekiq.org/pro) for more details and how to buy.
 
+
+2.0.0
+-----------
+
+- See [the Upgrade Notes](Pro-2.0-Upgrade.md) for detailed notes.
+
+1.9.2
+-----------
+
+- As of 1/1/2015, Sidekiq Pro is hosted on a new dedicated server.
+  Happy new year and let's hope for 100% uptime!
+- Fix bug in reliable\_fetch where jobs could be duplicated if a Sidekiq
+  process crashed and you were using weighted queues. [#2120]
+
+1.9.1
+-----------
+
+- **SECURITY** Fix XSS in batch description, thanks to intercom.io for reporting the
+  issue.  If you don't use batch descriptions, you don't need the fix.
+
+1.9.0
+-----------
+
+- Add new expiring jobs feature [#1982]
+- Show batch expiration on Batch details page [#1981]
+- Add '$' batch success token to the pubsub support. [#1953]
+
+
+1.8.0
+-----------
+
+- Fix race condition where Batches can complete
+  before they have been fully defined or only half-defined. Requires
+  Sidekiq 3.2.3. [#1919]
+
+
+1.7.6
+-----------
+
+- Quick release to verify #1919
+
+
+1.7.5
+-----------
+
+- Fix job filtering within the Dead tab.
+- Add APIs and wiki documentation for invalidating jobs within a batch.
+
+
 1.7.4
 -----------
 

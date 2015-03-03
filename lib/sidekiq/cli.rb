@@ -1,3 +1,4 @@
+# encoding: utf-8
 $stdout.sync = true
 
 require 'yaml'
@@ -106,17 +107,6 @@ module Sidekiq
          sss }
     end
 
-    private
-
-    def print_banner
-      # Print logo and banner for development
-      if environment == 'development' && $stdout.tty?
-        puts "\e[#{31}m"
-        puts Sidekiq::CLI.banner
-        puts "\e[0m"
-      end
-    end
-
     def handle_signal(sig)
       Sidekiq.logger.debug "Got #{sig} signal"
       case sig
@@ -138,13 +128,24 @@ module Sidekiq
         end
       when 'TTIN'
         Thread.list.each do |thread|
-          Sidekiq.logger.info "Thread TID-#{thread.object_id.to_s(36)} #{thread['label']}"
+          Sidekiq.logger.warn "Thread TID-#{thread.object_id.to_s(36)} #{thread['label']}"
           if thread.backtrace
-            Sidekiq.logger.info thread.backtrace.join("\n")
+            Sidekiq.logger.warn thread.backtrace.join("\n")
           else
-            Sidekiq.logger.info "<no backtrace available>"
+            Sidekiq.logger.warn "<no backtrace available>"
           end
         end
+      end
+    end
+
+    private
+
+    def print_banner
+      # Print logo and banner for development
+      if environment == 'development' && $stdout.tty?
+        puts "\e[#{31}m"
+        puts Sidekiq::CLI.banner
+        puts "\e[0m"
       end
     end
 
@@ -195,9 +196,8 @@ module Sidekiq
       @environment = cli_env || ENV['RAILS_ENV'] || ENV['RACK_ENV'] || 'development'
     end
 
-    def die(code)
-      exit(code)
-    end
+    alias_method :die, :exit
+    alias_method :☠, :exit
 
     def setup_options(args)
       opts = parse_options(args)
@@ -353,7 +353,7 @@ module Sidekiq
     def parse_config(cfile)
       opts = {}
       if File.exist?(cfile)
-        opts = YAML.load(ERB.new(IO.read(cfile)).result)
+        opts = YAML.load(ERB.new(IO.read(cfile)).result) || opts
         opts = opts.merge(opts.delete(environment) || {})
         parse_queues(opts, opts.delete(:queues) || [])
       else

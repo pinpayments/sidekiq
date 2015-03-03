@@ -1,3 +1,79 @@
+HEAD
+-----------
+
+- Undeprecate delay extension for ActionMailer 4.2+ . [#2186]
+
+3.3.2
+-----------
+
+- Add Sidekiq::Stats#queues back
+- Allows configuration of dead job set size and timeout [#2173, jonhyman]
+- Refactor scheduler enqueuing so Sidekiq Pro can override it. [#2159]
+
+3.3.1
+-----------
+
+- Dumb down ActionMailer integration so it tries to deliver if possible [#2149]
+- Stringify Sidekiq.default\_worker\_options's keys [#2126]
+- Add random integer to process identity [#2113, michaeldiscala]
+- Log Sidekiq Pro's Batch ID if available [#2076]
+- Refactor Processor Redis usage to avoid redis/redis-rb#490 [#2094]
+- Move /dashboard/stats to /stats.  Add /stats/queues. [moserke, #2099]
+- Add processes count to /stats [ismaelga, #2141]
+- Greatly improve speed of Sidekiq::Stats [ismaelga, #2142]
+- Add better usage text for `sidekiqctl`.
+- `Sidekiq::Logging.with_context` is now a stack so you can set your
+  own job context for logging purposes [grosser, #2110]
+- Remove usage of Google Fonts in Web UI so it loads in China [#2144]
+
+3.3.0
+-----------
+
+- Upgrade to Celluloid 0.16 [#2056]
+- Fix typo for generator test file name [dlackty, #2016]
+- Add Sidekiq::Middleware::Chain#prepend [seuros, #2029]
+
+3.2.6
+-----------
+
+- Deprecate delay extension for ActionMailer 4.2+ . [seuros, #1933]
+- Poll interval tuning now accounts for dead processes [epchris, #1984]
+- Add non-production environment to Web UI page titles [JacobEvelyn, #2004]
+
+3.2.5
+-----------
+
+- Lock Celluloid to 0.15.2 due to bugs in 0.16.0.  This prevents the
+  "hang on shutdown" problem with Celluloid 0.16.0.
+
+3.2.4
+-----------
+
+- Fix issue preventing ActionMailer sends working in some cases with
+  Rails 4. [pbhogan, #1923]
+
+3.2.3
+-----------
+
+- Clean invalid bytes from error message before converting to JSON (requires Ruby 2.1+) [#1705]
+- Add queues list for each process to the Busy page. [davetoxa, #1897]
+- Fix for crash caused by empty config file. [jordan0day, #1901]
+- Add Rails Worker generator, `rails g sidekiq:worker User` will create `app/workers/user_worker.rb`. [seuros, #1909]
+- Fix Web UI rendering with huge job arguments [jhass, #1918]
+- Minor refactoring of Sidekiq::Client internals, for Sidekiq Pro. [#1919]
+
+3.2.2
+-----------
+
+- **This version of Sidekiq will no longer start on Ruby 1.9.**  Sidekiq
+  3 does not support MRI 1.9 but we've allowed it to run before now.
+- Fix issue which could cause Sidekiq workers to disappear from the Busy
+  tab while still being active [#1884]
+- Add "Back to App" button in Web UI.  You can set the button link via
+  `Sidekiq::Web.app_url = 'http://www.mysite.com'` [#1875, seuros]
+- Add process tag (`-g tag`) to the Busy page so you can differentiate processes at a glance. [seuros, #1878]
+- Add "Kill" button to move retries directly to the DJQ so they don't retry. [seuros, #1867]
+
 3.2.1
 -----------
 
@@ -173,7 +249,7 @@ middleware, see 3.0-Upgrade.md.**
 
 - Automatically use the config file found at `config/sidekiq.yml`, if not passed `-C`. [#1481]
 - Store 'retried\_at' and 'failed\_at' timestamps as Floats, not Strings. [#1473]
-- A `USR2` signal will now reopen _all_ logs, using IO#reopen. Thus, instead of creating a new Logger object, 
+- A `USR2` signal will now reopen _all_ logs, using IO#reopen. Thus, instead of creating a new Logger object,
   Sidekiq will now just update the existing Logger's file descriptor [#1163].
 - Remove pidfile when shutting down if started with `-P` [#1470]
 

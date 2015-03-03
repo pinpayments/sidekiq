@@ -32,6 +32,7 @@ ru:
   NextRetry: Следующая попытка
   RetryCount: Кол-во попыток
   RetryNow: Повторить сейчас
+  Kill: Убиваем
   LastRetry: Последняя попытка
   OriginallyFailed: Первый провал
   AreYouSure: Вы уверены?
@@ -65,3 +66,9 @@ ru:
   Thread: Поток
   Threads: Потоки
   Jobs: Задачи
+  Paused: Приостановлено
+  Stop: Остановить
+  Quiet: Отдыхать
+  StopAll: Остановить все
+  QuietAll: Отдыхать всем
+  PollingInterval: Интервал опроса

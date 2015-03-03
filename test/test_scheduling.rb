@@ -1,4 +1,4 @@
-require 'helper'
+require_relative 'helper'
 require 'sidekiq/scheduled'
 
 class TestScheduling < Sidekiq::Test
@@ -27,6 +27,15 @@ class TestScheduling < Sidekiq::Test
     it 'schedules a job via interval' do
       @redis.expect :zadd, true, ['schedule', Array]
       assert ScheduledWorker.perform_in(600, 'mike')
+      @redis.verify
+    end
+
+    it 'schedules a job in one month' do
+      @redis.expect :zadd, true do |key, args|
+        assert_equal 'schedule', key
+        assert_in_delta 1.month.since.to_f, args[0][0].to_f, 1
+      end
+      assert ScheduledWorker.perform_in(1.month, 'mike')
       @redis.verify
     end
 

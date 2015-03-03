@@ -1,4 +1,5 @@
-require 'helper'
+# encoding: utf-8
+require_relative 'helper'
 require 'sidekiq/scheduled'
 require 'sidekiq/middleware/server/retry_jobs'
 
@@ -50,6 +51,23 @@ class TestRetry < Sidekiq::Test
       @redis.verify
     end
 
+    it 'handles zany characters in error message, #1705' do
+      skip 'skipped! test requires ruby 2.1+' if RUBY_VERSION <= '2.1.0'
+      @redis.expect :zadd, 1, ['retry', String, String]
+      msg = { 'class' => 'Bob', 'args' => [1,2,'foo'], 'retry' => 2 }
+      msg2 = msg.dup
+      handler = Sidekiq::Middleware::Server::RetryJobs.new
+      assert_raises RuntimeError do
+        handler.call(worker, msg2, 'default') do
+          raise "kerblammo! #{195.chr}"
+        end
+      end
+      msg2.delete('failed_at')
+      assert_equal({"class"=>"Bob", "args"=>[1, 2, "foo"], "retry"=>2, "queue"=>"default", "error_message"=>"kerblammo! �", "error_class"=>"RuntimeError", "retry_count"=>0}, msg2)
+      @redis.verify
+    end
+
+
     it 'allows a max_retries option in initializer' do
       max_retries = 7
       1.upto(max_retries) do
@@ -92,11 +110,13 @@ class TestRetry < Sidekiq::Test
       c = nil
       assert_raises RuntimeError do
         handler.call(worker, msg, 'default') do
-          c = caller(0)[0..3]; raise "kerblammo!"
+          c = caller(0)[0...3]; raise "kerblammo!"
         end
       end
       assert msg["error_backtrace"]
       assert_equal c, msg["error_backtrace"]
+      assert_equal 3, c.size
+      assert_equal 3, msg["error_backtrace"].size
     end
 
     it 'handles a new failed message' do

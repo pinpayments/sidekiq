@@ -1,4 +1,4 @@
-require 'helper'
+require_relative 'helper'
 
 class TestApi < Sidekiq::Test
 
@@ -24,7 +24,7 @@ class TestApi < Sidekiq::Test
     describe "failed" do
       it "is initially zero" do
         s = Sidekiq::Stats.new
-        assert_equal 0, s.processed
+        assert_equal 0, s.failed
       end
 
       it "returns number of failed jobs" do
@@ -76,9 +76,13 @@ class TestApi < Sidekiq::Test
     end
 
     describe "queues" do
+      it "returns all queues" do
+        assert_equal Sidekiq::Stats.new.queues, Sidekiq::Stats::Queues.new.lengths
+      end
+
       it "is initially empty" do
-        s = Sidekiq::Stats.new
-        assert_equal 0, s.queues.size
+        s = Sidekiq::Stats::Queues.new
+        assert_equal 0, s.lengths.size
       end
 
       it "returns a hash of queue and size in order" do
@@ -90,9 +94,9 @@ class TestApi < Sidekiq::Test
           conn.sadd 'queues', 'bar'
         end
 
-        s = Sidekiq::Stats.new
-        assert_equal ({ "foo" => 1, "bar" => 3 }), s.queues
-        assert_equal "bar", s.queues.first.first
+        s = Sidekiq::Stats::Queues.new
+        assert_equal ({ "foo" => 1, "bar" => 3 }), s.lengths
+        assert_equal "bar", s.lengths.first.first
       end
     end
 
@@ -252,7 +256,7 @@ class TestApi < Sidekiq::Test
       job = Sidekiq::ScheduledSet.new.find_job(job_id)
       refute_nil job
       assert_equal job_id, job.jid
-      assert_in_delta job.latency, 0.0, 0.01
+      assert_in_delta job.latency, 0.0, 0.1
     end
 
     it 'can remove jobs when iterating over a sorted set' do
@@ -307,8 +311,6 @@ class TestApi < Sidekiq::Test
       add_retry('bob1', same_time)
       add_retry('bob2', same_time)
       r = Sidekiq::RetrySet.new
-      # jobs = r.fetch(same_time)
-      # puts jobs[1].jid
       assert_equal 1, r.fetch(same_time, 'bob1').size
     end
 
@@ -374,7 +376,15 @@ class TestApi < Sidekiq::Test
     end
 
     it 'can enumerate processes' do
-      odata = { 'pid' => 123, 'hostname' => hostname, 'key' => "#{hostname}:123", 'started_at' => Time.now.to_f - 15 }
+      identity_string = "identity_string"
+      odata = {
+        'pid' => 123,
+        'hostname' => hostname,
+        'key' => identity_string,
+        'identity' => identity_string,
+        'started_at' => Time.now.to_f - 15,
+      }
+
       time = Time.now.to_f
       Sidekiq.redis do |conn|
         conn.multi do
@@ -392,8 +402,9 @@ class TestApi < Sidekiq::Test
       assert_equal 123, data['pid']
       data.quiet!
       data.stop!
-      assert_equal "TERM", Sidekiq.redis{|c| c.lpop("#{hostname}:123-signals") }
-      assert_equal "USR1", Sidekiq.redis{|c| c.lpop("#{hostname}:123-signals") }
+      signals_string = "#{odata['key']}-signals"
+      assert_equal "TERM", Sidekiq.redis{|c| c.lpop(signals_string) }
+      assert_equal "USR1", Sidekiq.redis{|c| c.lpop(signals_string) }
     end
 
     it 'can enumerate workers' do
@@ -469,7 +480,7 @@ class TestApi < Sidekiq::Test
       end
 
       ps = Sidekiq::ProcessSet.new
-      assert_equal 3, ps.size
+      assert_equal 1, ps.size
       assert_equal 1, ps.to_a.size
     end
 

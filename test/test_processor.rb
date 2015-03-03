@@ -1,4 +1,4 @@
-require 'helper'
+require_relative 'helper'
 require 'sidekiq/processor'
 
 class TestProcessor < Sidekiq::Test
@@ -37,6 +37,12 @@ class TestProcessor < Sidekiq::Test
       @processor.process(work(msg))
       @boss.verify
       assert_equal 1, $invokes
+    end
+
+    it 'executes a worker as expected' do
+      worker = Minitest::Mock.new
+      worker.expect(:perform, nil, [1, 2, 3])
+      @processor.execute_job(worker, [1, 2, 3])
     end
 
     it 'passes exceptions to ExceptionHandler' do

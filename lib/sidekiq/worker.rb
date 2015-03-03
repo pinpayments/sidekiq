@@ -42,13 +42,13 @@ module Sidekiq
 
       def perform_in(interval, *args)
         int = interval.to_f
-        now = Time.now.to_f
-        ts = (int < 1_000_000_000 ? now + int : int)
+        now = Time.now
+        ts = (int < 1_000_000_000 ? (now + interval).to_f : int)
 
         item = { 'class' => self, 'args' => args, 'at' => ts }
 
         # Optimization to enqueue something now that is scheduled to go out now or in the past
-        item.delete('at') if ts <= now
+        item.delete('at'.freeze) if ts <= now.to_f
 
         client_push(item)
       end
@@ -65,7 +65,6 @@ module Sidekiq
       #   :pool - use the given Redis connection pool to push this type of job to a given shard.
       def sidekiq_options(opts={})
         self.sidekiq_options_hash = get_sidekiq_options.merge((opts || {}).stringify_keys)
-        ::Sidekiq.logger.warn("#{self.name} - :timeout is unsafe and support has been removed from Sidekiq, see http://bit.ly/OtYpK for details") if opts.include? :timeout
       end
 
       def sidekiq_retry_in(&block)

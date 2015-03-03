@@ -21,13 +21,17 @@
     <th><%= t('Busy') %></th>
     <th>&nbsp;</th>
   </thead>
-  <% Sidekiq::ProcessSet.new.each_with_index do |process, index| %>
+  <% processes.each do |process| %>
     <tr>
-      <td>
+      <td width="50%">
         <%= "#{process['hostname']}:#{process['pid']}" %>
-        <% Array(process['labels']).each do |label| %>
+        <span class="label label-success"><%= process.tag %></span>
+        <% process.labels.each do |label| %>
           <span class="label label-info"><%= label %></span>
         <% end %>
+        <br>
+        <b><%= "#{t('Queues')}: " %></b>
+        <%= process['queues'] * ", " %>
       </td>
       <td><%= relative_time(Time.at(process['started_at'])) %></td>
       <td><%= process['concurrency'] %></td>
@@ -35,8 +39,7 @@
       <td>
         <div class="btn-group pull-right">
           <form method="POST">
-            <input type="hidden" name="hostname" value="<%= process['hostname'] %>"/>
-            <input type="hidden" name="pid" value="<%= process['pid'] %>"/>
+            <input type="hidden" name="identity" value="<%= process['identity'] %>"/>
             <button class="btn btn-warn" type="submit" name="quiet" value="1"><%= t('Quiet') %></button>
             <button class="btn btn-danger" type="submit" name="stop" value="1"><%= t('Stop') %></button>
           </form>
@@ -62,7 +65,7 @@
     <th><%= t('Arguments') %></th>
     <th><%= t('Started') %></th>
   </thead>
-  <% workers.each_with_index do |(process, thread, msg), index| %>
+  <% workers.each do |process, thread, msg| %>
     <% job = Sidekiq::Job.new(msg['payload']) %>
     <tr>
       <td><%= process %></td>

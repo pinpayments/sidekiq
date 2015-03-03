@@ -1,4 +1,4 @@
-require 'helper'
+require_relative 'helper'
 require 'sidekiq/client'
 require 'sidekiq/worker'
 
@@ -102,13 +102,6 @@ class TestClient < Sidekiq::Test
       @redis.expect :lpush, 1, ['queue:default', Array]
       pushed = MyWorker.perform_async(1, 2)
       assert pushed
-      @redis.verify
-    end
-
-    it 'handles perform_async on failure' do
-      @redis.expect :lpush, nil, ['queue:default', Array]
-      pushed = MyWorker.perform_async(1, 2)
-      refute pushed
       @redis.verify
     end
 
@@ -266,6 +259,7 @@ class TestClient < Sidekiq::Test
     end
     it 'allows Resque helpers to point to different Redi' do
       conn = MiniTest::Mock.new
+      conn.expect(:multi, []) { |*args, &block| block.call }
       conn.expect(:zadd, 1, [String, Array])
       DWorker.sidekiq_options('pool' => ConnectionPool.new(size: 1) { conn })
       Sidekiq::Client.enqueue_in(10, DWorker, 3)

@@ -1,4 +1,4 @@
-require 'helper'
+require_relative 'helper'
 require 'sidekiq/cli'
 require 'tempfile'
 
@@ -31,9 +31,9 @@ class TestCli < Sidekiq::Test
     end
 
     it 'does not boot rails' do
-      refute defined?(::Rails)
+      refute defined?(::Rails::Application)
       @cli.parse(['sidekiq', '-r', './myapp'])
-      refute defined?(::Rails)
+      refute defined?(::Rails::Application)
     end
 
     it 'changes concurrency' do
@@ -238,6 +238,35 @@ class TestCli < Sidekiq::Test
       it 'sets queues' do
         assert_equal 2, Sidekiq.options[:queues].count { |q| q == 'very_often' }
         assert_equal 1, Sidekiq.options[:queues].count { |q| q == 'seldom' }
+      end
+    end
+
+    describe 'with an empty config file' do
+      before do
+        @tmp_file = Tempfile.new('sidekiq-test')
+        @tmp_path = @tmp_file.path
+        @tmp_file.close!
+      end
+
+      after do
+        File.unlink @tmp_path if File.exist? @tmp_path
+      end
+
+      it 'takes a path' do
+        @cli.parse(['sidekiq', '-C', @tmp_path])
+        assert_equal @tmp_path, Sidekiq.options[:config_file]
+      end
+
+      it 'should have an identical options hash, except for config_file' do
+        @cli.parse(['sidekiq'])
+        old_options = Sidekiq.options.clone
+
+        @cli.parse(['sidekiq', '-C', @tmp_path])
+        new_options = Sidekiq.options.clone
+        refute_equal old_options, new_options
+
+        new_options.delete(:config_file)
+        assert_equal old_options, new_options
       end
     end
 
